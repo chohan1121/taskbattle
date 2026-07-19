@@ -59,52 +59,42 @@ export default function NewBattlePage() {
   const todayStr = new Date().toISOString().split("T")[0];
 
   return (
-    <main className="flex flex-col gap-6 p-6">
-      <a href="/" className="text-sm text-muted">← 戻る</a>
-      <h1 className="text-2xl font-bold">新しいバトル</h1>
+    <div style={{ maxWidth: 480, margin: "0 auto" }}>
+      <a href="/" className="nav-back">← 戻る</a>
 
-      {error && (
-        <div className="rounded-[14px] bg-loss/10 px-4 py-3 text-sm text-loss">
-          {error}
-        </div>
-      )}
+      <form onSubmit={handleSubmit} className="form-page">
+        <h1 className="form-title">新しいバトル</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-muted">タイトル</label>
+        {error && <div className="form-error">{error}</div>}
+
+        <div className="form-group">
+          <label className="form-label">タイトル</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="例: 1週間コーディングバトル"
-            className="w-full rounded-[14px] border border-border bg-surface px-4 py-3 text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="form-input"
             maxLength={50}
             required
+            autoFocus
           />
         </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-muted">期間</label>
-          <div className="mb-3 flex gap-2">
+        <div className="form-group">
+          <label className="form-label">期間</label>
+          <div className="form-toggle-row">
             <button
               type="button"
               onClick={() => setPeriodType("preset")}
-              className={`flex-1 rounded-[14px] py-2 text-sm font-medium transition-colors ${
-                periodType === "preset"
-                  ? "bg-primary text-white"
-                  : "bg-surface text-foreground border border-border"
-              }`}
+              className={`form-toggle ${periodType === "preset" ? "active" : ""}`}
             >
               プリセット
             </button>
             <button
               type="button"
               onClick={() => setPeriodType("custom")}
-              className={`flex-1 rounded-[14px] py-2 text-sm font-medium transition-colors ${
-                periodType === "custom"
-                  ? "bg-primary text-white"
-                  : "bg-surface text-foreground border border-border"
-              }`}
+              className={`form-toggle ${periodType === "custom" ? "active" : ""}`}
             >
               日付指定
             </button>
@@ -114,7 +104,7 @@ export default function NewBattlePage() {
             <select
               value={days}
               onChange={(e) => setDays(Number(e.target.value))}
-              className="w-full rounded-[14px] border border-border bg-surface px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="form-input"
             >
               <option value={3}>3日間</option>
               <option value={7}>1週間</option>
@@ -127,20 +117,16 @@ export default function NewBattlePage() {
               value={customDate}
               onChange={(e) => setCustomDate(e.target.value)}
               min={todayStr}
-              className="w-full rounded-[14px] border border-border bg-surface px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="form-input"
               required={periodType === "custom"}
             />
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading || !title.trim()}
-          className="mt-2 rounded-[14px] bg-primary py-3 font-semibold text-white transition-transform active:scale-95 disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading || !title.trim()} className="btn-primary">
           {loading ? "作成中..." : "バトルを作成"}
         </button>
       </form>
-    </main>
+    </div>
   );
 }
