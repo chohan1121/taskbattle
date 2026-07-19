@@ -59,7 +59,7 @@ export default function NewBattlePage() {
   const todayStr = new Date().toISOString().split("T")[0];
 
   return (
-    <div style={{ maxWidth: 480, margin: "0 auto" }}>
+    <div className="app-shell">
       <a href="/" className="nav-back">← 戻る</a>
 
       <form onSubmit={handleSubmit} className="form-page">

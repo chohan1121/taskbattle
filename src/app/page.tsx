@@ -80,7 +80,7 @@ export default async function HomePage() {
   const initial = (profile?.name ?? "U").charAt(0).toUpperCase();
 
   return (
-    <div style={{ maxWidth: 480, margin: "0 auto" }}>
+    <div className="app-shell">
       <div className="top-bar">
         <h1>バトル</h1>
         <div className="avatar">{initial}</div>

@@ -103,7 +103,7 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
   };
 
   return (
-    <div style={{ maxWidth: 480, margin: "0 auto", paddingBottom: 80 }}>
+    <div className="app-shell" style={{ paddingBottom: 80 }}>
       <a href="/" className="nav-back">← バトル一覧</a>
 
       <div className="detail-header">
