@@ -53,6 +53,7 @@ export default async function HomePage() {
     opponent: MemberInfo | null;
     myScore: number;
     oppScore: number;
+    memberCount: number;
   };
 
   const cards: BattleCard[] = battleList.map((battle) => {
@@ -79,6 +80,7 @@ export default async function HomePage() {
       } : null,
       myScore: tasks.filter((t) => t.user_id === user.id).length,
       oppScore: oppMember ? tasks.filter((t) => t.user_id === oppMember.user_id).length : 0,
+      memberCount: members.length,
     };
   });
 

@@ -12,6 +12,7 @@ type Battle = {
   opponent: { userId: string; name: string; initial: string } | null;
   myScore: number;
   oppScore: number;
+  memberCount: number;
 };
 
 const statusLabel: Record<string, string> = {
@@ -53,20 +54,26 @@ export function BattleList({ battles, currentUserId }: { battles: Battle[]; curr
                 <div className="score-avatar score-avatar-me">{battle.me.initial}</div>
                 <span className="score-num">{battle.myScore}</span>
               </div>
-              <span className="score-vs">VS</span>
-              <div className="score-player right">
-                {battle.opponent ? (
-                  <>
-                    <span className="score-num">{battle.oppScore}</span>
-                    <div className="score-avatar score-avatar-opponent">{battle.opponent.initial}</div>
-                  </>
-                ) : (
-                  <>
-                    <span className="score-num" style={{ opacity: 0.3 }}>?</span>
-                    <div className="score-avatar score-avatar-invite">+</div>
-                  </>
-                )}
-              </div>
+              {battle.memberCount > 2 ? (
+                <span className="score-vs">👥 {battle.memberCount}人</span>
+              ) : (
+                <>
+                  <span className="score-vs">VS</span>
+                  <div className="score-player right">
+                    {battle.opponent ? (
+                      <>
+                        <span className="score-num">{battle.oppScore}</span>
+                        <div className="score-avatar score-avatar-opponent">{battle.opponent.initial}</div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="score-num" style={{ opacity: 0.3 }}>?</span>
+                        <div className="score-avatar score-avatar-invite">+</div>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="battle-meta">

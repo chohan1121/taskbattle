@@ -17,11 +17,12 @@ type Props = {
   tasks: Task[];
   scores: Score[];
   currentUserId: string;
+  taskHistory: { title: string; category: string }[];
 };
 
 const catLabel: Record<string, string> = { coding: "コーディング", study: "勉強", exercise: "運動", other: "その他" };
 
-export function BattleDetail({ battle, members, tasks, scores, currentUserId }: Props) {
+export function BattleDetail({ battle, members, tasks, scores, currentUserId, taskHistory }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"mine" | "opponent" | "pending">("mine");
   const [showForm, setShowForm] = useState(false);
@@ -46,9 +47,7 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
 
   const bothJoined = members.length >= 2;
   const myMember = members.find((m) => m.user_id === currentUserId);
-  const oppMember = members.find((m) => m.user_id !== currentUserId);
   const myReady = !!myMember?.isReady;
-  const oppReady = !!oppMember?.isReady;
 
   const pendingTasks = tasks.filter((t) => t.status === "proposed" && t.user_id !== currentUserId);
   const myTasks = tasks.filter((t) => t.user_id === currentUserId);
@@ -198,8 +197,11 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
               <div className="ready-panel-title">バトル開始の準備</div>
               <div className="ready-panel-desc">タスクを提案・承認してから準備OKを押しましょう。お互いの準備が完了するとバトルがスタートします。</div>
               <div className="ready-players">
-                <span className={`ready-chip ${myReady ? "is-ready" : ""}`}>{me?.name ?? "自分"}：{myReady ? "準備OK ✓" : "準備中"}</span>
-                <span className={`ready-chip ${oppReady ? "is-ready" : ""}`}>{opponent?.name ?? "相手"}：{oppReady ? "準備OK ✓" : "準備中"}</span>
+                {members.map((m) => (
+                  <span key={m.user_id} className={`ready-chip ${m.isReady ? "is-ready" : ""}`}>
+                    {m.name}{m.user_id === currentUserId ? "（自分）" : ""}：{m.isReady ? "準備OK ✓" : "準備中"}
+                  </span>
+                ))}
               </div>
               {myReady ? (
                 <button className="btn-ready" disabled>相手の準備を待っています…</button>
@@ -247,6 +249,18 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleAddTask}>
             <h3 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 16 }}>タスクを提案</h3>
+            {taskHistory.length > 0 && (
+              <div className="history-chips">
+                <div className="history-label">履歴から選ぶ</div>
+                <div className="history-chip-row">
+                  {taskHistory.map((h) => (
+                    <button type="button" key={h.title} className="history-chip" onClick={() => { setTaskTitle(h.title); setTaskCat(h.category); }}>
+                      {h.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <input className="modal-input" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="タスク名" required autoFocus style={{ marginBottom: 12 }} />
             <select className="modal-input" value={taskCat} onChange={(e) => setTaskCat(e.target.value)} style={{ marginBottom: 16 }}>
               <option value="coding">コーディング</option>

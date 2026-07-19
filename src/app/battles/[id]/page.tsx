@@ -30,7 +30,7 @@ export default async function BattlePage({ params }: { params: Promise<{ id: str
     battle.status = "completed";
   }
 
-  const [{ data: members }, { data: tasks }] = await Promise.all([
+  const [{ data: members }, { data: tasks }, { data: history }] = await Promise.all([
     supabase
       .from("battle_members")
       .select("user_id, role, is_ready, users(id, name, avatar_url)")
@@ -40,7 +40,24 @@ export default async function BattlePage({ params }: { params: Promise<{ id: str
       .select("*")
       .eq("battle_id", id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("tasks")
+      .select("title, category")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(60),
   ]);
+
+  // Distinct recent task titles the user has proposed before (for quick reuse).
+  const seenTitles = new Set<string>();
+  const taskHistory: { title: string; category: string }[] = [];
+  for (const t of history ?? []) {
+    if (t.title && !seenTitles.has(t.title)) {
+      seenTitles.add(t.title);
+      taskHistory.push({ title: t.title, category: t.category ?? "other" });
+    }
+    if (taskHistory.length >= 12) break;
+  }
 
   const memberList = (members ?? []).map((m) => {
     const u = m.users as unknown as { id: string; name: string; avatar_url: string | null } | null;
@@ -67,6 +84,7 @@ export default async function BattlePage({ params }: { params: Promise<{ id: str
       tasks={tasks ?? []}
       scores={scores}
       currentUserId={user.id}
+      taskHistory={taskHistory}
     />
   );
 }

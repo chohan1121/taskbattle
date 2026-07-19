@@ -491,6 +491,25 @@ body {
   box-shadow: 0 0 0 2px var(--primary);
 }
 
+/* ===== Task history chips (proposal modal) ===== */
+.history-chips { margin-bottom: 14px; }
+.history-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+.history-chip-row { display: flex; flex-wrap: wrap; gap: 6px; max-height: 104px; overflow-y: auto; }
+.history-chip {
+  padding: 6px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 0.78rem;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-chip:hover { border-color: var(--primary); color: var(--primary); }
+
 /* ===== Task approval (swipe + buttons) ===== */
 .approve-card {
   user-select: none;
