@@ -9,6 +9,12 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
 
   if (!user) redirect("/login?next=/friends");
 
+  const { data: profile } = await supabase
+    .from("users")
+    .select("friend_code")
+    .eq("id", user.id)
+    .single();
+
   const { data: rows } = await supabase
     .from("friendships")
     .select("user_a, user_b")
@@ -26,5 +32,5 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
     initial: (u.name ?? "U").charAt(0).toUpperCase(),
   }));
 
-  return <FriendsView myId={user.id} friends={friends} justAdded={added === "1"} />;
+  return <FriendsView myId={user.id} myCode={profile?.friend_code ?? "------"} friends={friends} justAdded={added === "1"} />;
 }

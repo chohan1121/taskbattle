@@ -572,6 +572,17 @@ body {
 .friend-link-label { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
 .friend-link-desc { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; }
 .friend-section-title { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; }
+.friend-code-value {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 14px;
+  padding-left: 0.25em;
+}
+.friend-add-row { display: flex; gap: 10px; margin-bottom: 8px; }
+.friend-add-row .form-input { flex: 1; letter-spacing: 0.15em; font-weight: 600; }
+.friend-add-msg { font-size: 0.78rem; color: var(--loss); margin-bottom: 8px; }
 .friend-row {
   display: flex;
   align-items: center;

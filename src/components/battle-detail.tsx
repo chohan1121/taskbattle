@@ -137,7 +137,7 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
 
   return (
     <div className="app-shell" style={{ paddingBottom: 80 }}>
-      <a href="/" className="nav-back">← バトル一覧</a>
+      <a href="/" className="nav-back" aria-label="バトル一覧へ戻る">←</a>
 
       <div className="detail-header">
         <div className="detail-title">{battle.title}</div>

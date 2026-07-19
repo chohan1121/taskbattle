@@ -84,7 +84,7 @@ export default async function HomePage() {
       <div className="top-bar">
         <h1>バトル</h1>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <a href="/friends" className="topbar-link">👥 フレンド</a>
+          <a href="/friends" className="topbar-link" aria-label="フレンド">👥</a>
           <div className="avatar">{initial}</div>
         </div>
       </div>

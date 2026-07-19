@@ -60,7 +60,7 @@ export default function NewBattlePage() {
 
   return (
     <div className="app-shell">
-      <a href="/" className="nav-back">← 戻る</a>
+      <a href="/" className="nav-back" aria-label="戻る">←</a>
 
       <form onSubmit={handleSubmit} className="form-page">
         <h1 className="form-title">新しいバトル</h1>
