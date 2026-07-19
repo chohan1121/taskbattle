@@ -83,7 +83,10 @@ export default async function HomePage() {
     <div className="app-shell">
       <div className="top-bar">
         <h1>バトル</h1>
-        <div className="avatar">{initial}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <a href="/friends" className="topbar-link">👥 フレンド</a>
+          <div className="avatar">{initial}</div>
+        </div>
       </div>
 
       {cards.length === 0 ? (
