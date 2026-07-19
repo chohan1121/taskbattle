@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BattleList } from "@/components/battle-list";
+import { InviteList } from "@/components/invite-list";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -77,6 +78,24 @@ export default async function HomePage() {
     };
   });
 
+  const { data: inviteRows } = await supabase
+    .from("battle_invitations")
+    .select("battle_id, inviter_id, battles(title)")
+    .eq("invitee_id", user.id)
+    .eq("status", "pending");
+
+  const inviterIds = [...new Set((inviteRows ?? []).map((r) => r.inviter_id).filter((x): x is string => !!x))];
+  const { data: inviterUsers } = inviterIds.length > 0
+    ? await supabase.from("users").select("id, name").in("id", inviterIds)
+    : { data: [] };
+  const nameById = new Map((inviterUsers ?? []).map((u) => [u.id, u.name]));
+
+  const invites = (inviteRows ?? []).map((r) => ({
+    battleId: r.battle_id,
+    battleTitle: (r.battles as unknown as { title: string } | null)?.title ?? "バトル",
+    inviterName: nameById.get(r.inviter_id ?? "") ?? "フレンド",
+  }));
+
   const initial = (profile?.name ?? "U").charAt(0).toUpperCase();
 
   return (
@@ -88,6 +107,8 @@ export default async function HomePage() {
           <div className="avatar">{initial}</div>
         </div>
       </div>
+
+      <InviteList invites={invites} />
 
       {cards.length === 0 ? (
         <div className="empty-state">

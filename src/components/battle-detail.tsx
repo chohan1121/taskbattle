@@ -152,7 +152,19 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
         <div className="status-banner active">⚔️ バトル中 ・ 残り{daysLeft}日</div>
       )}
 
-      {/* Score hero */}
+      {/* Score / ranking */}
+      {members.length > 2 ? (
+        <div className="rank-list">
+          {sortedScores.map((s, i) => (
+            <div key={s.userId} className="rank-row">
+              <span className="rank-pos">{i + 1}</span>
+              <div className="rank-avatar">{(s.name ?? "?").charAt(0)}</div>
+              <span className="rank-name">{s.name}{s.userId === currentUserId ? "（自分）" : ""}</span>
+              <span className="rank-score">{s.score}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="score-hero">
         <div className="score-hero-player">
           <div className="score-hero-avatar" style={{ background: "linear-gradient(135deg, var(--primary), #34d399)" }}>{meInitial}</div>
@@ -173,6 +185,7 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
           </div>
         )}
       </div>
+      )}
 
       {/* Ready-up panel (preparing only) */}
       {isPreparing && (

@@ -583,6 +583,116 @@ body {
 .friend-add-row { display: flex; gap: 10px; margin-bottom: 8px; }
 .friend-add-row .form-input { flex: 1; letter-spacing: 0.15em; font-weight: 600; }
 .friend-add-msg { font-size: 0.78rem; color: var(--loss); margin-bottom: 8px; }
+
+/* ===== Friend select (new battle) ===== */
+.friend-select-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 4px 2px;
+}
+.friend-select-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.friend-select-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.friend-select-chip.selected { background: var(--primary-glow); border-color: var(--primary); color: var(--primary); }
+.friend-select-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #34d399);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.friend-select-check { color: var(--primary); font-weight: 800; }
+
+/* ===== Invites (home) ===== */
+.invite-section { padding: 0 16px; margin-bottom: 20px; }
+.invite-section-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; }
+.invite-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+}
+.invite-info { flex: 1; min-width: 0; }
+.invite-title { font-size: 0.92rem; font-weight: 700; }
+.invite-from { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.invite-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.invite-accept {
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.invite-decline {
+  padding: 8px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ===== Ranking (N-player battle) ===== */
+.rank-list { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.rank-pos {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  width: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.rank-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #34d399);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.rank-name { flex: 1; font-size: 0.9rem; font-weight: 600; }
+.rank-score { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
 .friend-row {
   display: flex;
   align-items: center;
