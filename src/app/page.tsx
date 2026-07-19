@@ -3,47 +3,51 @@ import { createClient } from "@/lib/supabase/server";
 import { BattleList } from "@/components/battle-list";
 import { InviteList } from "@/components/invite-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("name")
-    .eq("id", user.id)
-    .single();
-
-  const { data: myMemberships } = await supabase
-    .from("battle_members")
-    .select("battle_id, battles(id, title, period_start, period_end, status)")
-    .eq("user_id", user.id)
-    .order("joined_at", { ascending: false });
-
   type Battle = { id: string; title: string; period_start: string; period_end: string; status: string };
+
+  // Wave 1: everything that only needs the user id, in parallel.
+  const [{ data: profile }, { data: myMemberships }, { data: inviteRows }] = await Promise.all([
+    supabase.from("users").select("name").eq("id", user.id).single(),
+    supabase
+      .from("battle_members")
+      .select("battle_id, battles(id, title, period_start, period_end, status)")
+      .eq("user_id", user.id)
+      .order("joined_at", { ascending: false }),
+    supabase
+      .from("battle_invitations")
+      .select("battle_id, inviter_id, battles(title)")
+      .eq("invitee_id", user.id)
+      .eq("status", "pending"),
+  ]);
+
   const battleList = (myMemberships ?? [])
     .map((b) => b.battles as unknown as Battle | null)
     .filter((b): b is Battle => b !== null);
-
   const battleIds = battleList.map((b) => b.id);
+  const inviterIds = [...new Set((inviteRows ?? []).map((r) => r.inviter_id).filter((x): x is string => !!x))];
 
-  const { data: allMembers } = battleIds.length > 0
-    ? await supabase
-        .from("battle_members")
-        .select("battle_id, user_id, users(id, name, avatar_url)")
-        .in("battle_id", battleIds)
-    : { data: [] };
+  // Wave 2: everything that needs the ids from wave 1, in parallel.
+  const [{ data: allMembers }, { data: allTasks }, { data: inviterUsers }] = await Promise.all([
+    battleIds.length > 0
+      ? supabase.from("battle_members").select("battle_id, user_id, users(id, name, avatar_url)").in("battle_id", battleIds)
+      : Promise.resolve({ data: [] as { battle_id: string; user_id: string; users: unknown }[] }),
+    battleIds.length > 0
+      ? supabase.from("tasks").select("battle_id, user_id, status").in("battle_id", battleIds).eq("status", "completed")
+      : Promise.resolve({ data: [] as { battle_id: string; user_id: string; status: string }[] }),
+    inviterIds.length > 0
+      ? supabase.from("users").select("id, name").in("id", inviterIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+  ]);
 
-  const { data: allTasks } = battleIds.length > 0
-    ? await supabase
-        .from("tasks")
-        .select("battle_id, user_id, status")
-        .in("battle_id", battleIds)
-        .eq("status", "completed")
-    : { data: [] };
-
-  type MemberInfo = { odivId: string; name: string; initial: string };
+  type MemberInfo = { userId: string; name: string; initial: string };
   type BattleCard = Battle & {
     me: MemberInfo;
     opponent: MemberInfo | null;
@@ -64,12 +68,12 @@ export default async function HomePage() {
     return {
       ...battle,
       me: {
-        odivId: user.id,
+        userId: user.id,
         name: meUser?.name ?? "自分",
         initial: (meUser?.name ?? "U").charAt(0).toUpperCase(),
       },
       opponent: oppMember ? {
-        odivId: oppMember.user_id,
+        userId: oppMember.user_id,
         name: oppUser?.name ?? "?",
         initial: (oppUser?.name ?? "?").charAt(0).toUpperCase(),
       } : null,
@@ -78,18 +82,7 @@ export default async function HomePage() {
     };
   });
 
-  const { data: inviteRows } = await supabase
-    .from("battle_invitations")
-    .select("battle_id, inviter_id, battles(title)")
-    .eq("invitee_id", user.id)
-    .eq("status", "pending");
-
-  const inviterIds = [...new Set((inviteRows ?? []).map((r) => r.inviter_id).filter((x): x is string => !!x))];
-  const { data: inviterUsers } = inviterIds.length > 0
-    ? await supabase.from("users").select("id, name").in("id", inviterIds)
-    : { data: [] };
   const nameById = new Map((inviterUsers ?? []).map((u) => [u.id, u.name]));
-
   const invites = (inviteRows ?? []).map((r) => ({
     battleId: r.battle_id,
     battleTitle: (r.battles as unknown as { title: string } | null)?.title ?? "バトル",

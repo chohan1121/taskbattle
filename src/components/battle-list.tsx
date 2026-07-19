@@ -8,8 +8,8 @@ type Battle = {
   period_start: string;
   period_end: string;
   status: string;
-  me: { odivId: string; name: string; initial: string };
-  opponent: { odivId: string; name: string; initial: string } | null;
+  me: { userId: string; name: string; initial: string };
+  opponent: { userId: string; name: string; initial: string } | null;
   myScore: number;
   oppScore: number;
 };

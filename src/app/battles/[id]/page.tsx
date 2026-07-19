@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BattleDetail } from "@/components/battle-detail";
 
+export const dynamic = "force-dynamic";
+
 export default async function BattlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -31,16 +33,17 @@ export default async function BattlePage({ params }: { params: Promise<{ id: str
     battle.status = "completed";
   }
 
-  const { data: members } = await supabase
-    .from("battle_members")
-    .select("user_id, role, is_ready, users(id, name, avatar_url)")
-    .eq("battle_id", id);
-
-  const { data: tasks } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("battle_id", id)
-    .order("created_at", { ascending: false });
+  const [{ data: members }, { data: tasks }] = await Promise.all([
+    supabase
+      .from("battle_members")
+      .select("user_id, role, is_ready, users(id, name, avatar_url)")
+      .eq("battle_id", id),
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("battle_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const memberList = (members ?? []).map((m) => {
     const u = m.users as unknown as { id: string; name: string; avatar_url: string | null } | null;
