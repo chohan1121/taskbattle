@@ -100,8 +100,8 @@ body {
   border-radius: 100px;
   font-weight: 600;
 }
-.status-active { background: rgba(34, 197, 94, 0.12); color: #16a34a; }
-.status-preparing { background: var(--primary-glow); color: var(--primary); }
+.status-active { background: rgba(34, 197, 94, 0.14); color: #16a34a; }
+.status-preparing { background: rgba(234, 179, 8, 0.16); color: #ca8a04; }
 .status-completed { background: var(--surface-2); color: var(--text-muted); }
 
 .battle-score {
