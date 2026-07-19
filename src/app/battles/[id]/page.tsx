@@ -33,7 +33,7 @@ export default async function BattlePage({ params }: { params: Promise<{ id: str
 
   const { data: members } = await supabase
     .from("battle_members")
-    .select("user_id, role, users(id, name, avatar_url)")
+    .select("user_id, role, is_ready, users(id, name, avatar_url)")
     .eq("battle_id", id);
 
   const { data: tasks } = await supabase
@@ -49,6 +49,7 @@ export default async function BattlePage({ params }: { params: Promise<{ id: str
       role: m.role,
       name: u?.name ?? "ユーザー",
       avatarUrl: u?.avatar_url ?? null,
+      isReady: (m as { is_ready?: boolean }).is_ready ?? false,
     };
   });
 

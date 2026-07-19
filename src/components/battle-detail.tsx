@@ -9,7 +9,7 @@ import { VictoryCard } from "./victory-card";
 type Battle = { id: string; title: string; period_start: string; period_end: string; status: string };
 type Task = { id: string; battle_id: string; user_id: string; title: string; category: string; status: string; completed_at: string | null; proof_text: string | null };
 type Score = { userId: string; name: string; avatarUrl: string | null; score: number };
-type Member = { user_id: string; role: string; name: string; avatarUrl: string | null };
+type Member = { user_id: string; role: string; name: string; avatarUrl: string | null; isReady: boolean };
 
 type Props = {
   battle: Battle;
@@ -28,6 +28,7 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskCat, setTaskCat] = useState("other");
   const [loading, setLoading] = useState(false);
+  const [readyLoading, setReadyLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const sortedScores = [...scores].sort((a, b) => b.score - a.score);
@@ -38,6 +39,16 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
   const end = new Date(battle.period_end);
   const start = new Date(battle.period_start);
   const daysLeft = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  const durationDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+
+  const isActive = battle.status === "active";
+  const isPreparing = battle.status === "preparing";
+
+  const bothJoined = members.length >= 2;
+  const myMember = members.find((m) => m.user_id === currentUserId);
+  const oppMember = members.find((m) => m.user_id !== currentUserId);
+  const myReady = !!myMember?.isReady;
+  const oppReady = !!oppMember?.isReady;
 
   const pendingTasks = tasks.filter((t) => t.status === "proposed" && t.user_id !== currentUserId);
   const myTasks = tasks.filter((t) => t.user_id === currentUserId);
@@ -58,12 +69,27 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleReady = async () => {
+    setReadyLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("ready_up", { p_battle_id: battle.id });
+    setReadyLoading(false);
+    if (error) { alert("バトル開始に失敗しました: " + error.message); return; }
+    router.refresh();
+  };
+
   const handleComplete = async (taskId: string) => {
+    if (!isActive) { alert("バトルがまだ開始されていません"); return; }
     if (now > end) { alert("バトル期間が終了しています"); return; }
     const proof = prompt("何をしたか簡単に書いてください:");
     if (!proof) return;
     const supabase = createClient();
-    await supabase.from("tasks").update({ status: "completed", completed_at: now.toISOString(), proof_text: proof }).eq("id", taskId).eq("status", "approved");
+    const { error } = await supabase
+      .from("tasks")
+      .update({ status: "completed", completed_at: new Date().toISOString(), proof_text: proof })
+      .eq("id", taskId)
+      .eq("status", "approved");
+    if (error) { alert("完了報告に失敗しました: " + error.message); return; }
     router.refresh();
   };
 
@@ -72,18 +98,24 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
     if (!taskTitle.trim()) return;
     setLoading(true);
     const supabase = createClient();
-    await supabase.from("tasks").insert({ battle_id: battle.id, user_id: currentUserId, title: taskTitle.trim(), category: taskCat });
-    setTaskTitle(""); setShowForm(false); setLoading(false);
+    const { error } = await supabase
+      .from("tasks")
+      .insert({ battle_id: battle.id, user_id: currentUserId, title: taskTitle.trim(), category: taskCat });
+    setLoading(false);
+    if (error) { alert("タスクの提案に失敗しました: " + error.message); return; }
+    setTaskTitle(""); setShowForm(false);
     router.refresh();
   };
 
-  const renderTask = (task: Task, canComplete: boolean) => {
+  const renderTask = (task: Task, isMine: boolean) => {
     const done = task.status === "completed";
     const approved = task.status === "approved";
     const proposed = task.status === "proposed";
+    const rejected = task.status === "rejected";
+    const canReport = isMine && isActive;
 
     return (
-      <div key={task.id} className="task-item">
+      <div key={task.id} className="task-item" style={rejected ? { opacity: 0.55 } : {}}>
         <div className={`task-check ${done ? "task-check-done" : approved ? "task-check-pending" : ""}`}>
           {done && "✓"}
         </div>
@@ -95,9 +127,10 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
           </div>
         </div>
         {done && <span className="task-badge badge-done">完了</span>}
-        {approved && canComplete && <button className="badge-report" onClick={() => handleComplete(task.id)}>完了報告</button>}
-        {approved && !canComplete && <span className="task-badge badge-approved">承認済</span>}
+        {approved && canReport && <button className="badge-report" onClick={() => handleComplete(task.id)}>完了報告</button>}
+        {approved && !canReport && <span className="task-badge badge-approved">承認済</span>}
         {proposed && <span className="task-badge badge-pending">承認待ち</span>}
+        {rejected && <span className="task-badge badge-rejected">却下</span>}
       </div>
     );
   };
@@ -109,9 +142,15 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
       <div className="detail-header">
         <div className="detail-title">{battle.title}</div>
         <div className="detail-period">
-          {start.toLocaleDateString("ja-JP")} 〜 {end.toLocaleDateString("ja-JP")} ・ 残り{daysLeft}日
+          {isActive
+            ? `${start.toLocaleDateString("ja-JP")} 〜 ${end.toLocaleDateString("ja-JP")} ・ 残り${daysLeft}日`
+            : `開始待ち ・ 期間 ${durationDays}日間`}
         </div>
       </div>
+
+      {isActive && (
+        <div className="status-banner active">⚔️ バトル中 ・ 残り{daysLeft}日</div>
+      )}
 
       {/* Score hero */}
       <div className="score-hero">
@@ -134,6 +173,33 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
           </div>
         )}
       </div>
+
+      {/* Ready-up panel (preparing only) */}
+      {isPreparing && (
+        <div className="ready-panel">
+          {!bothJoined ? (
+            <>
+              <div className="ready-panel-title">相手を招待しよう</div>
+              <div className="ready-panel-desc">招待リンクを送って、相手が参加したらバトルの準備ができます。</div>
+              <button className="btn-outline" onClick={copyInvite}>{copied ? "コピーしました ✓" : "🔗 招待リンクをコピー"}</button>
+            </>
+          ) : (
+            <>
+              <div className="ready-panel-title">バトル開始の準備</div>
+              <div className="ready-panel-desc">タスクを提案・承認してから準備OKを押しましょう。お互いの準備が完了するとバトルがスタートします。</div>
+              <div className="ready-players">
+                <span className={`ready-chip ${myReady ? "is-ready" : ""}`}>{me?.name ?? "自分"}：{myReady ? "準備OK ✓" : "準備中"}</span>
+                <span className={`ready-chip ${oppReady ? "is-ready" : ""}`}>{opponent?.name ?? "相手"}：{oppReady ? "準備OK ✓" : "準備中"}</span>
+              </div>
+              {myReady ? (
+                <button className="btn-ready" disabled>相手の準備を待っています…</button>
+              ) : (
+                <button className="btn-ready" onClick={handleReady} disabled={readyLoading}>{readyLoading ? "..." : "準備OK・バトル開始"}</button>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="tab-bar">

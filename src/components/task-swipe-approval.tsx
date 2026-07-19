@@ -34,11 +34,7 @@ export function TaskSwipeApproval({
 
   const currentTask = tasks[currentIndex];
   if (!currentTask) {
-    return (
-      <div className="rounded-[14px] bg-surface p-4 text-center">
-        <p className="text-sm text-muted">すべて確認済み ✓</p>
-      </div>
-    );
+    return <div className="approve-empty">すべて確認しました ✓</div>;
   }
 
   const handleAction = async (approved: boolean) => {
@@ -46,7 +42,7 @@ export function TaskSwipeApproval({
     setProcessing(true);
 
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
       .from("tasks")
       .update({
         status: approved ? "approved" : "rejected",
@@ -55,105 +51,60 @@ export function TaskSwipeApproval({
       .eq("id", currentTask.id)
       .eq("status", "proposed");
 
+    setProcessing(false);
+
+    if (error) {
+      alert((approved ? "承認" : "却下") + "に失敗しました: " + error.message);
+      setOffset(0);
+      return;
+    }
+
     setCurrentIndex((i) => i + 1);
     setOffset(0);
-    setProcessing(false);
     router.refresh();
   };
 
-  // Touch events
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    setDragging(true);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!dragging) return;
-    setOffset(e.touches[0].clientX - startX.current);
-  };
-
-  const handleTouchEnd = () => {
-    setDragging(false);
-    const threshold = 80;
-    if (offset > threshold) {
-      handleAction(true);
-    } else if (offset < -threshold) {
-      handleAction(false);
-    } else {
-      setOffset(0);
-    }
-  };
-
-  // Mouse events (for desktop)
-  const handleMouseDown = (e: React.MouseEvent) => {
-    startX.current = e.clientX;
-    setDragging(true);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!dragging) return;
-    setOffset(e.clientX - startX.current);
-  };
-
-  const handleMouseUp = () => {
+  const endDrag = () => {
     if (!dragging) return;
     setDragging(false);
     const threshold = 80;
-    if (offset > threshold) {
-      handleAction(true);
-    } else if (offset < -threshold) {
-      handleAction(false);
-    } else {
-      setOffset(0);
-    }
+    if (offset > threshold) handleAction(true);
+    else if (offset < -threshold) handleAction(false);
+    else setOffset(0);
   };
 
-  const bgColor = offset > 40 ? "bg-emerald-50 border-emerald-300" : offset < -40 ? "bg-red-50 border-red-300" : "bg-white border-border";
+  const lean = offset > 40 ? "lean-approve" : offset < -40 ? "lean-reject" : "";
 
   return (
-    <div className="flex flex-col gap-3">
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div
-        className={`select-none cursor-grab rounded-[14px] border-2 p-6 text-center transition-colors ${bgColor} touch-none`}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
+        className={`approve-card ${lean}`}
+        onTouchStart={(e) => { startX.current = e.touches[0].clientX; setDragging(true); }}
+        onTouchMove={(e) => { if (dragging) setOffset(e.touches[0].clientX - startX.current); }}
+        onTouchEnd={endDrag}
+        onMouseDown={(e) => { startX.current = e.clientX; setDragging(true); }}
+        onMouseMove={(e) => { if (dragging) setOffset(e.clientX - startX.current); }}
+        onMouseUp={endDrag}
         onMouseLeave={() => { if (dragging) { setDragging(false); setOffset(0); } }}
-        style={{ transform: `translateX(${offset}px) rotate(${offset * 0.05}deg)`, transition: dragging ? "none" : "transform 0.3s, background-color 0.2s" }}
+        style={{
+          transform: `translateX(${offset}px) rotate(${offset * 0.04}deg)`,
+          transition: dragging ? "none" : "transform 0.3s, background-color 0.2s, border-color 0.2s",
+        }}
       >
-        <p className="text-lg font-semibold text-foreground">{currentTask.title}</p>
-        <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          {categoryLabel[currentTask.category] ?? currentTask.category}
-        </span>
-        <div className="mt-4 flex justify-between text-xs text-muted">
-          <span className="text-loss font-medium">← 却下</span>
-          <span className="text-win font-medium">承認 →</span>
+        <div className="approve-title">{currentTask.title}</div>
+        <span className="approve-cat">{categoryLabel[currentTask.category] ?? currentTask.category}</span>
+        <div className="approve-hint">
+          <span className="h-reject">← 却下</span>
+          <span className="h-approve">承認 →</span>
         </div>
       </div>
 
-      {/* Fallback buttons */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => handleAction(false)}
-          disabled={processing}
-          className="flex-1 rounded-[14px] border-2 border-loss/30 py-2 text-sm font-semibold text-loss transition-colors hover:bg-loss/5 active:scale-95 disabled:opacity-50"
-        >
-          ✕ 却下
-        </button>
-        <button
-          onClick={() => handleAction(true)}
-          disabled={processing}
-          className="flex-1 rounded-[14px] border-2 border-win/30 py-2 text-sm font-semibold text-win transition-colors hover:bg-win/5 active:scale-95 disabled:opacity-50"
-        >
-          ○ 承認
-        </button>
+      <div className="approve-actions">
+        <button className="btn-reject" onClick={() => handleAction(false)} disabled={processing}>✕ 却下</button>
+        <button className="btn-approve" onClick={() => handleAction(true)} disabled={processing}>○ 承認</button>
       </div>
 
-      <p className="text-center text-xs text-muted">
-        {currentIndex + 1} / {tasks.length}
-      </p>
+      <div className="approve-count">{currentIndex + 1} / {tasks.length}</div>
     </div>
   );
 }

@@ -216,14 +216,88 @@ body {
 
 /* ===== Detail: Back nav ===== */
 .nav-back {
-  padding: 16px 20px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 14px 16px 4px;
+  padding: 8px 15px 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.nav-back:hover { background: var(--surface-2); border-color: rgba(0,0,0,0.1); }
+.nav-back:active { transform: scale(0.97); }
+
+/* ===== Battle lifecycle ===== */
+.status-banner {
+  margin: 12px 16px 0;
+  padding: 9px 14px;
+  border-radius: 100px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.status-banner.active { background: rgba(34, 197, 94, 0.12); color: #16a34a; }
+
+.ready-panel {
+  margin: 16px;
+  padding: 22px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+.ready-panel-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.ready-panel-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.55; }
+.ready-players {
   display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.ready-chip {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.ready-chip.is-ready { background: rgba(34, 197, 94, 0.12); color: #16a34a; }
+.btn-ready {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.btn-ready:active { transform: scale(0.98); }
+.btn-ready:disabled { opacity: 1; cursor: default; background: var(--surface-2); color: var(--text-muted); transform: none; }
+.btn-outline {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: var(--surface);
   color: var(--primary);
-  font-weight: 500;
-  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* ===== Detail: Header ===== */
@@ -350,6 +424,7 @@ body {
 .badge-done { background: rgba(34,197,94,0.1); color: #16a34a; }
 .badge-approved { background: rgba(234,179,8,0.1); color: #ca8a04; }
 .badge-pending { background: rgba(234,179,8,0.1); color: #ca8a04; }
+.badge-rejected { background: rgba(100,116,139,0.1); color: var(--text-muted); }
 .badge-report {
   background: var(--primary);
   color: white;
@@ -414,6 +489,61 @@ body {
 }
 .modal-input:focus {
   box-shadow: 0 0 0 2px var(--primary);
+}
+
+/* ===== Task approval (swipe + buttons) ===== */
+.approve-card {
+  user-select: none;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 20px;
+  text-align: center;
+  background: var(--surface);
+  cursor: grab;
+  touch-action: none;
+}
+.approve-card.lean-approve { background: rgba(16, 185, 129, 0.06); border-color: var(--primary); }
+.approve-card.lean-reject { background: rgba(239, 68, 68, 0.06); border-color: var(--loss); }
+.approve-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+.approve-cat {
+  display: inline-block;
+  background: var(--primary-glow);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 100px;
+}
+.approve-hint {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.approve-hint .h-reject { color: var(--loss); }
+.approve-hint .h-approve { color: var(--primary); }
+.approve-actions { display: flex; gap: 12px; margin-top: 14px; }
+.btn-reject, .btn-approve {
+  flex: 1;
+  padding: 13px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--surface);
+  transition: transform 0.1s;
+}
+.btn-reject { border: 2px solid rgba(239, 68, 68, 0.3); color: var(--loss); }
+.btn-approve { border: 2px solid rgba(16, 185, 129, 0.4); color: var(--primary); }
+.btn-reject:active, .btn-approve:active { transform: scale(0.96); }
+.btn-reject:disabled, .btn-approve:disabled { opacity: 0.5; cursor: default; }
+.approve-count { text-align: center; font-size: 0.72rem; color: var(--text-muted); margin-top: 10px; }
+.approve-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 /* ===== Form page (new battle) ===== */
