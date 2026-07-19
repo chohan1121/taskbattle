@@ -42,20 +42,27 @@ export default async function BattlePage({ params }: { params: Promise<{ id: str
     .eq("battle_id", id)
     .order("created_at", { ascending: false });
 
-  const scores = (members ?? []).map((m) => {
+  const memberList = (members ?? []).map((m) => {
     const u = m.users as unknown as { id: string; name: string; avatar_url: string | null } | null;
     return {
-      userId: m.user_id,
+      user_id: m.user_id,
+      role: m.role,
       name: u?.name ?? "ユーザー",
       avatarUrl: u?.avatar_url ?? null,
-      score: (tasks ?? []).filter((t) => t.user_id === m.user_id && t.status === "completed").length,
     };
   });
+
+  const scores = memberList.map((m) => ({
+    userId: m.user_id,
+    name: m.name,
+    avatarUrl: m.avatarUrl,
+    score: (tasks ?? []).filter((t) => t.user_id === m.user_id && t.status === "completed").length,
+  }));
 
   return (
     <BattleDetail
       battle={battle}
-      members={members ?? []}
+      members={memberList}
       tasks={tasks ?? []}
       scores={scores}
       currentUserId={user.id}

@@ -17,11 +17,11 @@ const statusLabel: Record<string, string> = {
   cancelled: "キャンセル",
 };
 
-const statusColor: Record<string, string> = {
-  preparing: "bg-yellow-100 text-yellow-700",
-  active: "bg-emerald-100 text-emerald-700",
-  completed: "bg-gray-100 text-gray-600",
-  cancelled: "bg-red-100 text-red-600",
+const statusStyle: Record<string, string> = {
+  preparing: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  completed: "bg-gray-50 text-gray-500 border-gray-200",
+  cancelled: "bg-red-50 text-red-500 border-red-200",
 };
 
 export function BattleList({ battles }: { battles: Battle[] }) {
@@ -31,7 +31,7 @@ export function BattleList({ battles }: { battles: Battle[] }) {
         <Link
           key={battle.id}
           href={`/battles/${battle.id}`}
-          className="flex items-center justify-between rounded-[14px] bg-surface p-4 shadow-sm transition-transform active:scale-[0.98]"
+          className="flex items-center justify-between rounded-[14px] bg-white border border-border p-4 shadow-sm transition-transform active:scale-[0.98]"
         >
           <div>
             <h2 className="font-semibold text-foreground">{battle.title}</h2>
@@ -39,7 +39,7 @@ export function BattleList({ battles }: { battles: Battle[] }) {
               {new Date(battle.period_end).toLocaleDateString("ja-JP")} まで
             </p>
           </div>
-          <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor[battle.status] ?? ""}`}>
+          <span className={`rounded-full border px-3 py-1 text-xs font-medium ${statusStyle[battle.status] ?? ""}`}>
             {statusLabel[battle.status] ?? battle.status}
           </span>
         </Link>

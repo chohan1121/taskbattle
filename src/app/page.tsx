@@ -10,6 +10,12 @@ export default async function HomePage() {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("users")
+    .select("name")
+    .eq("id", user.id)
+    .single();
+
   const { data: battles } = await supabase
     .from("battle_members")
     .select("battle_id, battles(id, title, period_start, period_end, status)")
@@ -22,22 +28,31 @@ export default async function HomePage() {
     .filter((b): b is Battle => b !== null);
 
   return (
-    <main className="flex flex-col gap-6 p-6 pb-24">
+    <main className="flex flex-col gap-5 p-5 pb-24 max-w-lg mx-auto">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">バトル</h1>
+        <div>
+          <p className="text-sm text-muted">こんにちは</p>
+          <h1 className="text-xl font-bold text-foreground">{profile?.name ?? "ユーザー"}</h1>
+        </div>
         <a
           href="/battles/new"
-          className="rounded-[14px] bg-primary px-4 py-2 text-sm font-semibold text-white transition-transform active:scale-95"
+          className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform active:scale-95"
         >
-          + 新規作成
+          + 新規バトル
         </a>
       </header>
 
       {battleList.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 pt-20 text-center">
-          <div className="text-5xl">⚔️</div>
-          <p className="text-lg font-medium text-foreground">まだバトルがありません</p>
-          <p className="text-sm text-muted">新しいバトルを作成して友達を招待しよう！</p>
+        <div className="flex flex-col items-center justify-center gap-4 pt-16 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-4xl">⚔️</div>
+          <p className="text-lg font-semibold text-foreground">まだバトルがありません</p>
+          <p className="text-sm text-muted">新しいバトルを作成して<br/>友達を招待しよう！</p>
+          <a
+            href="/battles/new"
+            className="mt-2 rounded-full bg-primary px-6 py-3 font-semibold text-white shadow-sm transition-transform active:scale-95"
+          >
+            最初のバトルを作成
+          </a>
         </div>
       ) : (
         <BattleList battles={battleList} />

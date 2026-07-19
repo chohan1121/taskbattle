@@ -32,12 +32,32 @@ type Score = {
   score: number;
 };
 
+type Member = {
+  user_id: string;
+  role: string;
+  name: string;
+  avatarUrl: string | null;
+};
+
 type Props = {
   battle: Battle;
-  members: Array<{ user_id: string; role: string; users: unknown }>;
+  members: Member[];
   tasks: Task[];
   scores: Score[];
   currentUserId: string;
+};
+
+const categoryLabel: Record<string, string> = {
+  coding: "コーディング",
+  study: "勉強",
+  exercise: "運動",
+  other: "その他",
+};
+
+const statusLabel: Record<string, string> = {
+  preparing: "準備中",
+  active: "進行中",
+  completed: "終了",
 };
 
 export function BattleDetail({ battle, members, tasks, scores, currentUserId }: Props) {
@@ -46,7 +66,7 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskCategory, setTaskCategory] = useState("other");
   const [loading, setLoading] = useState(false);
-  const [scoreAnimation, setScoreAnimation] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const inviteUrl = typeof window !== "undefined"
     ? `${window.location.origin}/join/${battle.id}`
@@ -56,8 +76,16 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
     (t) => t.status === "proposed" && t.user_id !== currentUserId
   );
 
-  const myTasks = tasks.filter(
+  const myProposedTasks = tasks.filter(
+    (t) => t.user_id === currentUserId && t.status === "proposed"
+  );
+
+  const myApprovedTasks = tasks.filter(
     (t) => t.user_id === currentUserId && t.status === "approved"
+  );
+
+  const myCompletedTasks = tasks.filter(
+    (t) => t.user_id === currentUserId && t.status === "completed"
   );
 
   const sortedScores = [...scores].sort((a, b) => b.score - a.score);
@@ -105,58 +133,75 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
       .eq("id", taskId)
       .eq("status", "approved");
 
-    setScoreAnimation(taskId);
-    setTimeout(() => setScoreAnimation(null), 1000);
     router.refresh();
   };
 
-  const copyInvite = () => {
-    navigator.clipboard.writeText(inviteUrl);
-    alert("招待リンクをコピーしました！");
+  const copyInvite = async () => {
+    await navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <main className="flex flex-col gap-6 p-6 pb-24">
-      <header>
-        <a href="/" className="text-sm text-muted">← 戻る</a>
-        <h1 className="mt-2 text-2xl font-bold">{battle.title}</h1>
+    <main className="flex flex-col gap-5 p-5 pb-24 max-w-lg mx-auto">
+      {/* Header */}
+      <header className="flex flex-col gap-1">
+        <a href="/" className="text-sm text-primary font-medium">← バトル一覧</a>
+        <div className="flex items-center justify-between mt-1">
+          <h1 className="text-xl font-bold text-foreground">{battle.title}</h1>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            {statusLabel[battle.status] ?? battle.status}
+          </span>
+        </div>
         <p className="text-xs text-muted">
           {new Date(battle.period_end).toLocaleDateString("ja-JP")} まで
         </p>
       </header>
 
+      {/* Members */}
+      <section className="rounded-[14px] bg-white border border-border p-4">
+        <h2 className="mb-2 text-xs font-semibold text-muted uppercase tracking-wide">メンバー</h2>
+        <div className="flex gap-3">
+          {members.map((m) => (
+            <div key={m.user_id} className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
+                {m.name.charAt(0)}
+              </div>
+              <span className="text-sm font-medium">{m.name}</span>
+            </div>
+          ))}
+          {members.length < 2 && (
+            <button onClick={copyInvite} className="flex items-center gap-1 text-sm text-primary font-medium">
+              {copied ? "✓ コピー済み" : "+ 招待"}
+            </button>
+          )}
+        </div>
+      </section>
+
       {/* Score board */}
-      <section className="rounded-[14px] bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-muted">スコア</h2>
-        <div className="flex flex-col gap-2">
+      <section className="rounded-[14px] bg-white border border-border p-4">
+        <h2 className="mb-3 text-xs font-semibold text-muted uppercase tracking-wide">スコアボード</h2>
+        <div className="flex flex-col gap-3">
           {sortedScores.map((s, i) => (
             <div key={s.userId} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-primary">{i + 1}</span>
-                <span className="font-medium">{s.name}</span>
+              <div className="flex items-center gap-3">
+                <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${i === 0 ? "bg-primary text-white" : "bg-surface text-muted"}`}>
+                  {i + 1}
+                </span>
+                <span className="font-medium text-foreground">{s.name}</span>
               </div>
-              <span className={`text-xl font-bold ${scoreAnimation ? "animate-bounce" : ""}`}>
-                {s.score}
-              </span>
+              <span className="text-2xl font-bold text-foreground">{s.score}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Invite */}
-      {members.length < 2 && (
-        <button
-          onClick={copyInvite}
-          className="rounded-[14px] border-2 border-dashed border-primary/30 p-4 text-center text-sm text-primary transition-colors hover:bg-primary/5"
-        >
-          🔗 招待リンクをコピー
-        </button>
-      )}
-
-      {/* Pending approvals (swipe UI) */}
+      {/* Pending approvals */}
       {pendingApprovalTasks.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-muted">承認待ちタスク</h2>
+        <section className="rounded-[14px] bg-white border border-border p-4">
+          <h2 className="mb-3 text-xs font-semibold text-muted uppercase tracking-wide">
+            承認待ち ({pendingApprovalTasks.length})
+          </h2>
           <TaskSwipeApproval
             tasks={pendingApprovalTasks}
             currentUserId={currentUserId}
@@ -164,36 +209,55 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
         </section>
       )}
 
-      {/* My approved tasks */}
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-muted">自分のタスク</h2>
+      {/* My tasks section */}
+      <section className="rounded-[14px] bg-white border border-border p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-muted uppercase tracking-wide">自分のタスク</h2>
           <button
             onClick={() => setShowTaskForm(true)}
-            className="text-sm font-medium text-primary"
+            className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white transition-transform active:scale-95"
           >
-            + 追加
+            + 提案する
           </button>
         </div>
-        <div className="mt-3 flex flex-col gap-2">
-          {myTasks.length === 0 && (
-            <p className="text-sm text-muted">承認済みのタスクはまだありません</p>
+
+        <div className="flex flex-col gap-2">
+          {myProposedTasks.length === 0 && myApprovedTasks.length === 0 && myCompletedTasks.length === 0 && (
+            <p className="text-sm text-muted py-2">タスクを提案してバトルを始めよう</p>
           )}
-          {myTasks.map((task) => (
-            <div
-              key={task.id}
-              className="flex items-center justify-between rounded-[14px] bg-surface p-3"
-            >
+
+          {myApprovedTasks.map((task) => (
+            <div key={task.id} className="flex items-center justify-between rounded-[12px] bg-surface p-3">
               <div>
-                <p className="font-medium">{task.title}</p>
-                <span className="text-xs text-muted">{task.category}</span>
+                <p className="font-medium text-foreground">{task.title}</p>
+                <span className="text-xs text-muted">{categoryLabel[task.category] ?? task.category}</span>
               </div>
               <button
                 onClick={() => handleCompleteTask(task.id)}
-                className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white transition-transform active:scale-95"
+                className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-transform active:scale-95"
               >
-                完了
+                完了報告
               </button>
+            </div>
+          ))}
+
+          {myProposedTasks.map((task) => (
+            <div key={task.id} className="flex items-center justify-between rounded-[12px] bg-yellow-50 border border-yellow-200 p-3">
+              <div>
+                <p className="font-medium text-foreground">{task.title}</p>
+                <span className="text-xs text-muted">{categoryLabel[task.category] ?? task.category}</span>
+              </div>
+              <span className="text-xs font-medium text-yellow-600">承認待ち</span>
+            </div>
+          ))}
+
+          {myCompletedTasks.map((task) => (
+            <div key={task.id} className="flex items-center justify-between rounded-[12px] bg-emerald-50 border border-emerald-200 p-3">
+              <div>
+                <p className="font-medium text-foreground line-through opacity-60">{task.title}</p>
+                <span className="text-xs text-muted">{categoryLabel[task.category] ?? task.category}</span>
+              </div>
+              <span className="text-xs font-medium text-emerald-600">完了 ✓</span>
             </div>
           ))}
         </div>
@@ -201,24 +265,26 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
 
       {/* Task form modal */}
       {showTaskForm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={() => setShowTaskForm(false)}>
           <form
             onSubmit={handleAddTask}
+            onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-t-[20px] bg-white p-6 shadow-xl"
           >
-            <h3 className="mb-4 text-lg font-bold">タスクを提案</h3>
+            <h3 className="mb-4 text-lg font-bold text-foreground">タスクを提案</h3>
             <input
               type="text"
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="タスク名"
-              className="mb-3 w-full rounded-[14px] border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="mb-3 w-full rounded-[14px] border border-border bg-surface px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               required
+              autoFocus
             />
             <select
               value={taskCategory}
               onChange={(e) => setTaskCategory(e.target.value)}
-              className="mb-4 w-full rounded-[14px] border border-border bg-surface px-4 py-3"
+              className="mb-4 w-full rounded-[14px] border border-border bg-surface px-4 py-3 text-foreground"
             >
               <option value="coding">コーディング</option>
               <option value="study">勉強</option>
@@ -229,7 +295,7 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
               <button
                 type="button"
                 onClick={() => setShowTaskForm(false)}
-                className="flex-1 rounded-[14px] border border-border py-3 font-medium"
+                className="flex-1 rounded-[14px] border border-border py-3 font-medium text-foreground"
               >
                 キャンセル
               </button>

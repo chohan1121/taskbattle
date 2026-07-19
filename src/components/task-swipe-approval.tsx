@@ -11,6 +11,13 @@ type Task = {
   user_id: string;
 };
 
+const categoryLabel: Record<string, string> = {
+  coding: "コーディング",
+  study: "勉強",
+  exercise: "運動",
+  other: "その他",
+};
+
 export function TaskSwipeApproval({
   tasks,
   currentUserId,
@@ -21,69 +28,130 @@ export function TaskSwipeApproval({
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [offset, setOffset] = useState(0);
-  const [swiping, setSwiping] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const startX = useRef(0);
 
   const currentTask = tasks[currentIndex];
   if (!currentTask) {
-    return <p className="text-sm text-muted">すべて確認済み ✓</p>;
+    return (
+      <div className="rounded-[14px] bg-surface p-4 text-center">
+        <p className="text-sm text-muted">すべて確認済み ✓</p>
+      </div>
+    );
   }
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    setSwiping(true);
-  };
+  const handleAction = async (approved: boolean) => {
+    if (processing) return;
+    setProcessing(true);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!swiping) return;
-    setOffset(e.touches[0].clientX - startX.current);
-  };
+    const supabase = createClient();
+    await supabase
+      .from("tasks")
+      .update({
+        status: approved ? "approved" : "rejected",
+        approved_by: approved ? currentUserId : null,
+      })
+      .eq("id", currentTask.id)
+      .eq("status", "proposed");
 
-  const handleTouchEnd = async () => {
-    setSwiping(false);
-    const threshold = 100;
-
-    if (Math.abs(offset) > threshold) {
-      const approved = offset > 0;
-      const supabase = createClient();
-
-      await supabase
-        .from("tasks")
-        .update({
-          status: approved ? "approved" : "rejected",
-          approved_by: approved ? currentUserId : null,
-        })
-        .eq("id", currentTask.id)
-        .eq("status", "proposed");
-
-      setCurrentIndex((i) => i + 1);
-    }
-
+    setCurrentIndex((i) => i + 1);
     setOffset(0);
+    setProcessing(false);
     router.refresh();
   };
 
-  const bgColor = offset > 50 ? "bg-win/10" : offset < -50 ? "bg-loss/10" : "bg-surface";
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    setDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragging) return;
+    setOffset(e.touches[0].clientX - startX.current);
+  };
+
+  const handleTouchEnd = () => {
+    setDragging(false);
+    const threshold = 80;
+    if (offset > threshold) {
+      handleAction(true);
+    } else if (offset < -threshold) {
+      handleAction(false);
+    } else {
+      setOffset(0);
+    }
+  };
+
+  // Mouse events (for desktop)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    startX.current = e.clientX;
+    setDragging(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!dragging) return;
+    setOffset(e.clientX - startX.current);
+  };
+
+  const handleMouseUp = () => {
+    if (!dragging) return;
+    setDragging(false);
+    const threshold = 80;
+    if (offset > threshold) {
+      handleAction(true);
+    } else if (offset < -threshold) {
+      handleAction(false);
+    } else {
+      setOffset(0);
+    }
+  };
+
+  const bgColor = offset > 40 ? "bg-emerald-50 border-emerald-300" : offset < -40 ? "bg-red-50 border-red-300" : "bg-white border-border";
 
   return (
-    <div className="relative">
+    <div className="flex flex-col gap-3">
       <div
-        className={`rounded-[14px] p-6 text-center transition-colors ${bgColor} touch-none`}
+        className={`select-none cursor-grab rounded-[14px] border-2 p-6 text-center transition-colors ${bgColor} touch-none`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ transform: `translateX(${offset}px)`, transition: swiping ? "none" : "transform 0.3s" }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={() => { if (dragging) { setDragging(false); setOffset(0); } }}
+        style={{ transform: `translateX(${offset}px) rotate(${offset * 0.05}deg)`, transition: dragging ? "none" : "transform 0.3s, background-color 0.2s" }}
       >
-        <p className="text-lg font-semibold">{currentTask.title}</p>
-        <span className="mt-1 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
-          {currentTask.category}
+        <p className="text-lg font-semibold text-foreground">{currentTask.title}</p>
+        <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          {categoryLabel[currentTask.category] ?? currentTask.category}
         </span>
         <div className="mt-4 flex justify-between text-xs text-muted">
-          <span>← 却下</span>
-          <span>承認 →</span>
+          <span className="text-loss font-medium">← 却下</span>
+          <span className="text-win font-medium">承認 →</span>
         </div>
       </div>
-      <p className="mt-2 text-center text-xs text-muted">
+
+      {/* Fallback buttons */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => handleAction(false)}
+          disabled={processing}
+          className="flex-1 rounded-[14px] border-2 border-loss/30 py-2 text-sm font-semibold text-loss transition-colors hover:bg-loss/5 active:scale-95 disabled:opacity-50"
+        >
+          ✕ 却下
+        </button>
+        <button
+          onClick={() => handleAction(true)}
+          disabled={processing}
+          className="flex-1 rounded-[14px] border-2 border-win/30 py-2 text-sm font-semibold text-win transition-colors hover:bg-win/5 active:scale-95 disabled:opacity-50"
+        >
+          ○ 承認
+        </button>
+      </div>
+
+      <p className="text-center text-xs text-muted">
         {currentIndex + 1} / {tasks.length}
       </p>
     </div>
