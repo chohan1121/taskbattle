@@ -23,13 +23,10 @@ export default async function BattlePage({ params }: { params: Promise<{ id: str
 
   if (!battle) notFound();
 
-  // Battle end detection: if period_end passed and still active, mark completed
+  // Battle end detection: if period_end passed and still active, finalize
+  // (marks completed + awards the winner's bonus points; any member can trigger).
   if (battle.status === "active" && new Date(battle.period_end) < new Date()) {
-    await supabase
-      .from("battles")
-      .update({ status: "completed" })
-      .eq("id", id)
-      .eq("status", "active");
+    await supabase.rpc("finalize_battle", { p_battle_id: id });
     battle.status = "completed";
   }
 

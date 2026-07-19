@@ -84,12 +84,9 @@ export function BattleDetail({ battle, members, tasks, scores, currentUserId }: 
     const proof = prompt("何をしたか簡単に書いてください:");
     if (!proof) return;
     const supabase = createClient();
-    const { error } = await supabase
-      .from("tasks")
-      .update({ status: "completed", completed_at: new Date().toISOString(), proof_text: proof })
-      .eq("id", taskId)
-      .eq("status", "approved");
+    const { data, error } = await supabase.rpc("complete_task", { p_task_id: taskId, p_proof: proof });
     if (error) { alert("完了報告に失敗しました: " + error.message); return; }
+    if (data !== "completed") { alert("完了報告できませんでした（" + data + "）"); return; }
     router.refresh();
   };
 

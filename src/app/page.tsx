@@ -15,7 +15,7 @@ export default async function HomePage() {
 
   // Wave 1: everything that only needs the user id, in parallel.
   const [{ data: profile }, { data: myMemberships }, { data: inviteRows }] = await Promise.all([
-    supabase.from("users").select("name").eq("id", user.id).single(),
+    supabase.from("users").select("name, points").eq("id", user.id).single(),
     supabase
       .from("battle_members")
       .select("battle_id, battles(id, title, period_start, period_end, status)")
@@ -90,12 +90,14 @@ export default async function HomePage() {
   }));
 
   const initial = (profile?.name ?? "U").charAt(0).toUpperCase();
+  const points = profile?.points ?? 0;
 
   return (
     <div className="app-shell">
       <div className="top-bar">
         <h1>バトル</h1>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <a href="/friends" className="topbar-link" aria-label="ランキング">⭐ {points}</a>
           <a href="/friends" className="topbar-link" aria-label="フレンド">👥</a>
           <div className="avatar">{initial}</div>
         </div>

@@ -4,9 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Friend = { id: string; name: string; initial: string };
+type Rank = { id: string; name: string; initial: string; points: number; isMe: boolean };
 
-export function FriendsView({ myId, myCode, friends, justAdded }: { myId: string; myCode: string; friends: Friend[]; justAdded: boolean }) {
+export function FriendsView({
+  myCode,
+  myPoints,
+  ranking,
+  friendCount,
+  justAdded,
+}: {
+  myCode: string;
+  myPoints: number;
+  ranking: Rank[];
+  friendCount: number;
+  justAdded: boolean;
+}) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [codeInput, setCodeInput] = useState("");
@@ -47,10 +59,11 @@ export function FriendsView({ myId, myCode, friends, justAdded }: { myId: string
       )}
 
       <div style={{ padding: "0 16px" }}>
-        {/* My code */}
+        {/* My code + points */}
         <div className="friend-link-box">
           <div className="friend-link-label">あなたのフレンドコード</div>
           <div className="friend-code-value">{myCode}</div>
+          <div className="friend-points">⭐ {myPoints} ポイント</div>
           <button className="btn-outline" onClick={copyCode}>{copied ? "コピーしました ✓" : "コードをコピー"}</button>
         </div>
 
@@ -70,21 +83,26 @@ export function FriendsView({ myId, myCode, friends, justAdded }: { myId: string
         </div>
         {msg && <div className="friend-add-msg">{msg}</div>}
 
-        <div className="friend-section-title" style={{ marginTop: 24 }}>フレンド{friends.length > 0 && ` (${friends.length})`}</div>
+        {/* Ranking */}
+        <div className="friend-section-title" style={{ marginTop: 24 }}>🏆 ランキング</div>
 
-        {friends.length === 0 ? (
+        {friendCount === 0 ? (
           <div className="empty-state" style={{ padding: "40px 24px" }}>
             <div className="empty-icon">👥</div>
             <div className="empty-title">まだフレンドがいません</div>
             <div className="empty-desc">あなたのコードを友達に伝えるか、<br/>相手のコードを入力して追加しよう！</div>
           </div>
         ) : (
-          friends.map((f) => (
-            <div key={f.id} className="friend-row">
-              <div className="friend-avatar">{f.initial}</div>
-              <div className="friend-name">{f.name}</div>
-            </div>
-          ))
+          <div className="rank-list" style={{ padding: 0 }}>
+            {ranking.map((r, i) => (
+              <div key={r.id} className={`rank-row ${r.isMe ? "is-me" : ""}`}>
+                <span className="rank-pos">{i + 1}</span>
+                <div className="rank-avatar">{r.initial}</div>
+                <span className="rank-name">{r.name}{r.isMe ? "（自分）" : ""}</span>
+                <span className="rank-score">⭐ {r.points}</span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

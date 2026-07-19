@@ -577,9 +577,17 @@ body {
   font-weight: 800;
   letter-spacing: 0.25em;
   font-variant-numeric: tabular-nums;
-  margin-bottom: 14px;
+  margin-bottom: 6px;
   padding-left: 0.25em;
 }
+.friend-points {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ca8a04;
+  margin-bottom: 14px;
+}
+.rank-row.is-me { border-color: var(--primary); background: var(--primary-glow); }
+.rank-score { display: inline-flex; align-items: baseline; gap: 2px; }
 .friend-add-row { display: flex; gap: 10px; margin-bottom: 8px; }
 .friend-add-row .form-input { flex: 1; letter-spacing: 0.15em; font-weight: 600; }
 .friend-add-msg { font-size: 0.78rem; color: var(--loss); margin-bottom: 8px; }
